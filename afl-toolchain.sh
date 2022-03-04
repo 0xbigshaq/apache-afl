@@ -62,6 +62,10 @@ cd ../
 # return to the httpd directory
 cd ../
 
+# apply hot-patching to enable fuzzing via AFL
+chmod +x ../insert-fuzz.py
+../insert-fuzz.py
+
 # configure compiler, flags and DSOs/apache modules
 CC=afl-clang-fast \
 CXX=afl-clang-fast++ \
