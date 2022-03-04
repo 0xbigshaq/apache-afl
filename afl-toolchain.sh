@@ -73,6 +73,20 @@ LDFLAGS="-fsanitize=address -fno-sanitize-recover=all -lm" \
             --with-expat="$PREFIX/expat/" \
             --with-pcre="$PREFIX/pcre/" \
             --disable-pie \
+            --disable-so \
+            --disable-example-ipc \
+            --disable-example-hooks \
+            --disable-optional-hook-export \
+            --disable-optional-hook-import \
+            --disable-optional-fn-export \
+            --disable-optional-fn-import \
+            --with-mpm=prefork \
+            --enable-static-support \
+            --enable-mods-static=reallyall \
+            --enable-debugger-mode \
+            --with-crypto --with-openssl \
+            --disable-shared
+
 # compile
 make -j $(nproc)
 # make install
