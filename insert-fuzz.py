@@ -9,6 +9,7 @@
 # as many Apache versions as we can without breaking stuff in the process.
 
 
+# hot-patch #1: Enable fuzzing via stdin
 needle = 'int main(int argc, const char * const argv[])\n{' 
 with open('./server/main.c', 'r') as f:
     haystack = f.read()
@@ -23,3 +24,29 @@ with open('./server/main.c', 'w') as f:
     f.write(result)
 
 print('[+] ./server/main.c is patched :^) \n')
+
+
+# hot-patch #2: Disable randomness to improve stability
+with open('./server/core.c', 'r') as f:
+    haystack = f.read()
+
+with open('../fuzz.patch.c', 'r') as f:
+    fuzzable = f.read()
+
+
+needle = 'rv = apr_generate_random_bytes(seed, sizeof(seed));' 
+disable_random = '''
+    	// ---- PATCH -----
+        // rv = apr_generate_random_bytes(seed, sizeof(seed));
+    	char constant_seed[] = {0x78,0xAB,0xF5,0xDB,0xE2,0x7F,0xD2,0x8A};
+        memcpy(seed, constant_seed, sizeof(seed));
+        rv = APR_SUCCESS;
+        //-------------------------------------------------
+
+'''
+result = haystack.replace(needle, disable_random)
+
+with open('./server/core.c', 'w') as f:
+    f.write(result)
+
+print('[+] ./server/core.c is patched :^) \n')
