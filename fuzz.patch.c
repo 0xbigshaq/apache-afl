@@ -65,53 +65,55 @@ static void fuzzer_thread(void)
     int BUFSIZE=1024*1024;
     usleep(10000);
     char buf[BUFSIZE+1];
-    memset(buf, 0, BUFSIZE);
-    size_t read_bytes = read(0, buf, BUFSIZE);
-    buf[BUFSIZE-2] = '\r';
-    buf[BUFSIZE-1] = '\n';
-    buf[BUFSIZE] = '\0';
+    while ( __AFL_LOOP(10000)) {
+        printf("[+] Looping\n");
+        memset(buf, 0, BUFSIZE);
+        size_t read_bytes = read(0, buf, BUFSIZE);
+        buf[BUFSIZE-2] = '\r';
+        buf[BUFSIZE-1] = '\n';
+        buf[BUFSIZE] = '\0';
 
-    int sockfd = socket(AF_INET, SOCK_STREAM, IPPROTO_IP);
-    if (sockfd == -1) {
-        perror("socket");
-        exit(1);
+        int sockfd = socket(AF_INET, SOCK_STREAM, IPPROTO_IP);
+        if (sockfd == -1) {
+            perror("socket");
+            exit(1);
+        }
+
+        int sz = (1024 * 1024);
+        if (setsockopt(sockfd, SOL_SOCKET, SO_SNDBUF, &sz, sizeof(sz)) == -1) {
+            perror("setsockopt");
+            exit(1);
+        }
+
+        printf("[+] Connecting\n", buf);
+
+        struct sockaddr_in saddr;
+        saddr.sin_family = AF_INET;
+        saddr.sin_port = htons(80);
+        saddr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+        while (connect(sockfd, &saddr, sizeof(saddr)) == -1) {
+            perror("connect");
+            usleep(100000);
+        }
+
+        printf("[+] Sending buf %s\n", buf);
+
+        if (send(sockfd, buf, read_bytes, MSG_NOSIGNAL) != read_bytes) {
+            perror("send() failed 1");
+            exit(1);
+        }
+
+        if (shutdown(sockfd, SHUT_WR) == -1) {
+            perror("shutdown");
+            exit(1);
+        }
+
+        char b[1024 * 1024];
+        while (recv(sockfd, b, sizeof(b), MSG_WAITALL) > 0) ;
+
+        printf("[+] Received %s\n", b);
+        close(sockfd);
     }
-
-    int sz = (1024 * 1024);
-    if (setsockopt(sockfd, SOL_SOCKET, SO_SNDBUF, &sz, sizeof(sz)) == -1) {
-        perror("setsockopt");
-        exit(1);
-    }
-
-    printf("[+] Connecting\n", buf);
-
-    struct sockaddr_in saddr;
-    saddr.sin_family = AF_INET;
-    saddr.sin_port = htons(80);
-    saddr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
-    while (connect(sockfd, &saddr, sizeof(saddr)) == -1) {
-        perror("connect");
-        usleep(100000);
-    }
-
-    printf("[+] Sending buf %s\n", buf);
-
-    if (send(sockfd, buf, read_bytes, MSG_NOSIGNAL) != read_bytes) {
-        perror("send() failed 1");
-        exit(1);
-    }
-
-    if (shutdown(sockfd, SHUT_WR) == -1) {
-        perror("shutdown");
-        exit(1);
-    }
-
-    char b[1024 * 1024];
-    while (recv(sockfd, b, sizeof(b), MSG_WAITALL) > 0) ;
-
-    printf("[+] Received %s\n", b);
-
-    close(sockfd);
     printf("[+] Done\n");
     usleep(100000);
     exit(0);
