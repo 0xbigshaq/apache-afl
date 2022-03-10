@@ -11,29 +11,21 @@
 
 # hot-patch #1: Enable fuzzing via stdin
 needle = 'int main(int argc, const char * const argv[])\n{' 
-with open('./server/main.c', 'r') as f:
-    haystack = f.read()
-
 with open('../fuzz.patch.c', 'r') as f:
     fuzzable = f.read()
 
-
+with open('./server/main.c', 'r+') as f:
+    haystack = f.read()
 result = haystack.replace(needle, fuzzable)
-
-with open('./server/main.c', 'w') as f:
+    f.seek(0)
     f.write(result)
-
 print('[+] ./server/main.c is patched :^) \n')
 
 
+
 # hot-patch #2: Disable randomness to improve stability
-with open('./server/core.c', 'r') as f:
+with open('./server/core.c', 'r+') as f:
     haystack = f.read()
-
-with open('../fuzz.patch.c', 'r') as f:
-    fuzzable = f.read()
-
-
 needle = 'rv = apr_generate_random_bytes(seed, sizeof(seed));' 
 disable_random = '''
     	// ---- PATCH -----
@@ -45,6 +37,11 @@ disable_random = '''
 
 '''
 result = haystack.replace(needle, disable_random)
+    f.seek(0)
+    f.write(result)
+    print('[+] ./server/core.c is patched :^) \n')
+
+
 
 with open('./server/core.c', 'w') as f:
     f.write(result)
