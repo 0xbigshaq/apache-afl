@@ -43,7 +43,17 @@ result = haystack.replace(needle, disable_random)
 
 
 
-with open('./server/core.c', 'w') as f:
+# hot-patch #3: Prevent a false-positive double-free situation in APR pool cleanup triggered by ASAN when the program exists.
+# TODO: Should find a different workaround / more elegant one
+with open('./os/unix/unixd.c', 'r+') as f:
+    haystack = f.read()
+    needle = 'apr_terminate();\n}' 
+    tmplol = '// apr_terminate();\n}'
+    result = haystack.replace(needle, tmplol)
+    f.seek(0)
     f.write(result)
+    print('[+] ./os/unix/unixd.c is patched :^) \n')
 
-print('[+] ./server/core.c is patched :^) \n')
+
+
+
