@@ -4,7 +4,20 @@
 apt-get update
 apt-get install -y brotli libbrotli-dev libxml2-dev libssl-dev wget curl
 
-export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
+# download llvm & compiler-rt to enable custom ASAN interceptors
+# https://releases.llvm.org/download.html#10.0.0
+apt-get install -y llvm 
+wget https://github.com/llvm/llvm-project/releases/download/llvmorg-10.0.0/compiler-rt-10.0.0.src.tar.xz
+tar -xvf compiler-rt-10.0.0.src.tar.xz
+rm compiler-rt-10.0.0.src.tar.xz
+cd compiler-rt-10.0.0.src
+mkdir build-compiler-rt
+cd build-compiler-rt
+cmake ../
+make
+export LD_LIBRARY_PATH=/usr/local/lib:$(pwd)/lib/linux:$LD_LIBRARY_PATH
+
+cd ../../
 
 mkdir -p /usr/local/apache_lab/
 PREFIX=/usr/local/apache_lab/
@@ -67,9 +80,10 @@ chmod +x ../insert-fuzz.py
 ../insert-fuzz.py
 
 # configure compiler, flags and DSOs/apache modules
+
 CC=afl-clang-fast \
 CXX=afl-clang-fast++ \
-CFLAGS="-g -fsanitize=address -fno-sanitize-recover=all" \
+CFLAGS="-g -fsanitize=address -fno-sanitize-recover=all -I$(pwd)/../compiler-rt-10.0.0.src/lib  -shared-libasan" \
 CXXFLAGS="-g -fsanitize=address -fno-sanitize-recover=all" \
 LDFLAGS="-fsanitize=address -fno-sanitize-recover=all -lm" \
 ./configure --with-apr="$PREFIX/apr/" \
