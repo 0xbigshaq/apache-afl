@@ -93,4 +93,4 @@ LDFLAGS="-fsanitize=address -fno-sanitize-recover=all -lm" \
 
 # compile
 make -j $(nproc)
-# make install
+make install
