@@ -1,5 +1,7 @@
 # apache-afl
 
+# This repo is archived. moved to [apatchy](https://github.com/0xbigshaq/apatchy)
+
 An automated setup for compiling & fuzzing Apache httpd server.
 
 More info about the process/journey can be found here: https://0xbigshaq.github.io/2022/03/12/fuzzing-smarter-part2
